@@ -1,3 +1,7 @@
+# sPyder - a simple SEO page analysis tool
+# author: Brian Voss <bvoss@yahoo-inc.com>
+# Adapted from: http://franx47.wordpress.com/2013/02/04/python-web-crawler-to-increase-seo-traffic-alexa-ranking/
+ 
 import sys
 import httplib
 import re
