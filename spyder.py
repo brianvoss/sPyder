@@ -1,6 +1,5 @@
 # sPyder - a simple SEO page analysis tool
 # author: Brian Voss <bvoss@yahoo-inc.com>
-# Adapted from: http://franx47.wordpress.com/2013/02/04/python-web-crawler-to-increase-seo-traffic-alexa-ranking/
  
 import sys
 import httplib
@@ -21,7 +20,8 @@ request_headers = [{
 
 # Link / info containers
 url = None
-depth = None
+depth = 1
+baseuri = None
 site = {}
 pages = {}
 
@@ -31,11 +31,11 @@ unprocessed = []
 processed = []
 
 
-def main( url, depth=1 ):
+def main( url, depth ):
 	global site
 	site = parseUrl(url)
-
-	start_page = process(url)
+	i = 1
+	start_page = process(url, None)
 	unprocessed.append( start_page )
 	
 	while ( len( unprocessed ) > 0) and depth > 0:
@@ -47,15 +47,18 @@ def main( url, depth=1 ):
 			link = links.pop(0)
 			url = str(link['href'])
 			
-			if not ( url in url_list ):
-				new_page = process( url )
-				if not ( new_page == None ):
-					unprocessed.append( new_page )
-					url_list.append(url)
+			new_page = process( url, baseuri )
+			if not ( new_page == None ):
+				unprocessed.append( new_page )
 
 		processed.append( current_page['url'] )
 		pages[current_page['url']] = current_page
-		print len(unprocessed)
+		print '=========================================='
+		print 'Iteration: %s' % i
+		print 'Link Queue: %s' % len(unprocessed)
+		print '=========================================='
+		depth = depth - 1
+		i = i + 1
 	
 	# Print Some Results
 	print 'Crawled %i pages' % len(pages)
@@ -65,7 +68,7 @@ def main( url, depth=1 ):
 	print errors
 
 
-def process(url):
+def process( url, base_uri=None ):
 	
 	# only follow links once
 	if url in processed:
@@ -82,8 +85,22 @@ def process(url):
 	# Enforce same domain only policy
 	if ( same_domain_only == True ):
 		if ( linkInfo.get('domain') != site.get('domain') ):
-			print 'Skipping non-local link %s' % url
-			return
+			#print 'Skipping non-local link %s' % url
+			return None
+			
+	# Enforce Base URI if provided
+	if not ( base_uri == None ):
+		if ( linkInfo['uri'].startswith(base_uri) == False ):
+			print 'URI %s not in BaseURI: %s' % ( linkInfo['uri'], base_uri )
+			return None
+
+	# Create a 'unique' URL (minus query string)
+	unique_url = '%s://%s%s' % ( linkInfo['protocol'], linkInfo['domain'], linkInfo['uri'])
+	# Only continue if URL has not already been handled
+	if not ( unique_url in url_list ):
+		url_list.append( unique_url )
+	else:
+		return None
 	
 	# Try to retrieve the page contents
 	try:
@@ -193,7 +210,7 @@ def usage():
 	print '-d depth to continue crawl (optional)'
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "u:d", ["depth=", "url="])
+    opts, args = getopt.getopt(sys.argv[1:], "u:dl", ["depth=", "url=", "baseuri="])
 except getopt.GetoptError as err:
     # print help information and exit:
     print str(err) # will print something like "option -a not recognized"
@@ -204,6 +221,8 @@ for o, a in opts:
 		url = a
 	elif o in ("-d", "--depth"):
 		depth = int(a)
+	elif o in ("-l", "--baseuri"):
+		baseuri = a
 	else:
 		assert False, "unhandled option"
 
