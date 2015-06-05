@@ -1,6 +1,7 @@
 # sPyder - a simple SEO page analysis tool
 # author: Brian Voss <bvoss@yahoo-inc.com>
  
+import os
 import sys
 import httplib
 import urllib2
@@ -15,7 +16,7 @@ from util.urlfetch import fetch
 debug = True
 same_domain_only = True
 request_headers = [{
-	'User-Agent':'Yahoo! sPyder'
+	'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36'
 }]
 
 # Link / info containers
@@ -42,7 +43,7 @@ def main( url, depth ):
 		
 		current_page = unprocessed.pop(0)
 		links = current_page['links'][:]
-		
+
 		while len(links) > 0:
 			link = links.pop(0)
 			url = str(link['href'])
@@ -201,7 +202,14 @@ def parseUrl( url ):
 	#print parse
 	#print urlinfo
 	return urlinfo
-	
+
+def savePage( content, filename ):
+	current_dir = os.path.dirname(os.path.abspath(__file__))
+	save_file = '%s/output/%s' % (current_dir, filename)
+	f = open( save_file, 'w')
+	f.write( str(content) )
+	f.close()
+
 
 def usage():
 	print '%s -ud' % sys.argv[0]
